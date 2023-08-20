@@ -1,6 +1,6 @@
 # OCR-CopyPastePad
 
-A simple OCR image-to-text GUI tool that uses Python + `tkinter` + `pytesseract` + `python-opencv`.
+A simple GUI tool for OCR image-to-text processing that uses Python + `tkinter` + `pytesseract` + `python-opencv`.
 
 ![OCR-CopyPastePad screenshot](https://github.com/FlyingFathead/OCR-CopyPastePad/blob/main/OCR-CopyPastePad.jpg)
 
