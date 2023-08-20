@@ -30,9 +30,13 @@ pip install -U requirements.txt
 ```
 python OCR-CopyPastePad.py
 ```
+or, for the non-`OpenCV` "lite" version:
+```
+python OCR-CopyPastePad_no_OpenCV_ROI.py
+```
 
 # Usage
-1. Launch the OCR-CopyPastePad application (`python OCR-CopyPastePad.py`).
+1. Launch the OCR-CopyPastePad application (`python OCR-CopyPastePad.py`). You can also try out if your OCR results are better with the non-OpenCV version by running `python OCR-CopyPastePad_no_OpenCV_ROI.py`.
 2. Load an image using the "Load Image" button or paste an image directly into the application
 (in Windows you can use i.e. the snippet tool: `Shift + Winkey + S`).
 4. If desired, use the "Detect Text Areas" button to see highlighted regions of text in the image.
