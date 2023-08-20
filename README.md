@@ -45,6 +45,7 @@ python OCR-CopyPastePad_no_OpenCV_ROI.py
 - Note that results may vary between source texts etc. -- in some cases, running the non-OpenCV version might actually yield more accurate results. OCR is a... thing.
 
 # Changelog
+- `v0.09`: Added image dilation+internal resize (times 3 by default) for better OCR accuracy, Tesseract language selection, other stuff WIP.
 - `v0.08`: Added the GUI option to invert image colors for better OCR accuracy.
 
 # Todo
