@@ -6,7 +6,7 @@ With `OCR-CopyPastePad`, you can easily get your text-containing image files rea
 
 # Features
 
-- Uses `pytesseract` for OCR and `python-opencv` (`cv2`) to detect ROI's (regions of interests) for higher accuracy.
+- Uses `pytesseract` for OCR and `python-opencv` (`cv2`) to detect ROI's (= regions of interest) for higher accuracy.
 - Easy Image Import: Load images directly from your computer or simply paste them using CTRL+V or Shift+Insert. Designed to be used i.e. in conjunction with the snippet tool in Windows (10, 11): `WinKey + Shift + S`
 - Image Preprocessing: Before text extraction, images undergo preprocessing to enhance the accuracy of the OCR. This includes grayscale conversion, binary thresholding, and resizing.
 - Intuitive Interface: The split-pane design allows users to view the original image side-by-side with the extracted text.
