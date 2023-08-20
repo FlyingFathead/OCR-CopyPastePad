@@ -39,7 +39,8 @@ python OCR-CopyPastePad.py
 5. The extracted text will automatically appear in the text pane on the right.
 
 # Todo
-- Better implementation of the clipboard copy-paste-functionality, user-drawable rectangle regions of interest on image
+- [ ] Better implementation of the clipboard copy-paste-functionality
+- [ ] User-drawable rectangle regions of interest on image
 
 # About
 - Code on GitHub: https://github.com/FlyingFathead/OCR-CopyPastePad/
