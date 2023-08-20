@@ -1,5 +1,8 @@
 # OCR-CopyPastePad
+
 A simple OCR image-to-text GUI tool that uses Python + `tkinter` + `pytesseract` + `python-opencv`.
+
+![OCR-CopyPastePad screenshot](https://github.com/FlyingFathead/OCR-CopyPastePad/blob/main/OCR-CopyPastePad.jpg)
 
 # About
 With `OCR-CopyPastePad`, you can easily get your text-containing image files read into plaintext format with `pytesseract`'s Tesseract OCR, making it easy to then copy-paste the text data onward to i.e. a text editor, ChatGPT or some other AI LLM that you need to go text data through with. The idea is for the program to be as simple as possible when OCR conversion from image to text is needed in a given workflow.
