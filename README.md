@@ -42,4 +42,5 @@ python OCR-CopyPastePad.py
 - Better implementation of the clipboard copy-paste-functionality, user-drawable rectangle regions of interest on image
 
 # About
-From [FlyingFathead](https://github.com/FlyingFathead/) + ghost code by ChaosWhisperer
+- Code on GitHub: https://github.com/FlyingFathead/OCR-CopyPastePad/
+- OCR-CopyPastePad is made by [FlyingFathead](https://github.com/FlyingFathead/) w/ ghost code by ChaosWhisperer
