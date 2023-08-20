@@ -30,9 +30,10 @@ python OCR-CopyPastePad.py
 
 # Usage
 1. Launch the OCR-CopyPastePad application (`python OCR-CopyPastePad.py`).
-2. Load an image using the "Load Image" button or paste an image directly into the application (in Windows you can use i.e. the snippet tool: `Shift + Winkey + S`).
-3. If desired, use the "Detect Text Areas" button to see highlighted regions of text in the image.
-4. The extracted text will automatically appear in the text pane on the right.
+2. Load an image using the "Load Image" button or paste an image directly into the application
+(in Windows you can use i.e. the snippet tool: `Shift + Winkey + S`).
+4. If desired, use the "Detect Text Areas" button to see highlighted regions of text in the image.
+5. The extracted text will automatically appear in the text pane on the right.
 
 # Todo
 - Better implementation of the clipboard copy-paste-functionality, user-drawable rectangle regions of interest on image
