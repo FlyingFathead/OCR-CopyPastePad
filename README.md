@@ -42,6 +42,8 @@ python OCR-CopyPastePad_no_OpenCV_ROI.py
 4. If desired, use the "Detect Text Areas" button to see highlighted regions of text in the image.
 5. The extracted text will automatically appear in the text pane on the right.
 
+- Note that results may vary between source texts etc. -- in some cases, running the non-OpenCV version might actually yield more accurate results. OCR is a... thing.
+
 # Changelog
 - `v0.08`: Added the GUI option to invert image colors for better OCR accuracy.
 
