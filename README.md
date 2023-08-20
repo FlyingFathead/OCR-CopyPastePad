@@ -38,6 +38,9 @@ python OCR-CopyPastePad.py
 4. If desired, use the "Detect Text Areas" button to see highlighted regions of text in the image.
 5. The extracted text will automatically appear in the text pane on the right.
 
+# Changelog
+- `v0.08`: Added the GUI option to invert image colors for better OCR accuracy.
+
 # Todo
 - [ ] Better implementation of the clipboard copy-paste-functionality
 - [ ] User-drawable rectangle regions of interest on image
