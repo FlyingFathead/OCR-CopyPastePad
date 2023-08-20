@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.08 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.09 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -8,7 +8,8 @@ import pytesseract
 import cv2
 import numpy as np
 
-VERSION = "v0.08"  # Updated version
+# Current version
+VERSION = "v0.09"
 
 class OCRCopyPastePad:
     def __init__(self, root):
@@ -22,14 +23,27 @@ class OCRCopyPastePad:
         # Create GUI components
         self.create_widgets()
 
+        # Language selection
+        self.language_var = tk.StringVar(self.root)
+        self.language_var.set('auto')  # default value
+        self.languages = ['auto'] + pytesseract.get_languages(config='')
+        self.language_dropdown = tk.OptionMenu(self.root, self.language_var, *self.languages)
+        self.language_dropdown.pack(pady=10)
+        self.language_label = tk.Label(self.root, text="Select OCR Language:")
+        self.language_label.pack(pady=10, before=self.language_dropdown)
+
     def create_widgets(self):
         # PanedWindow
         self.paned_window = tk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         self.paned_window.pack(fill=tk.BOTH, expand=1)
 
         # Image panel
-        self.image_label = tk.Label(self.paned_window, text="Image will be displayed here")
-        self.paned_window.add(self.image_label)
+        # self.image_label = tk.Label(self.paned_window, text="Image will be displayed here")
+        # self.paned_window.add(self.image_label)
+
+        # Image panel (using Canvas instead of Label)
+        self.image_canvas = tk.Canvas(self.paned_window)
+        self.paned_window.add(self.image_canvas)
 
         # Text panel
         self.text_area = tk.Text(self.paned_window, wrap=tk.WORD)
@@ -47,6 +61,46 @@ class OCRCopyPastePad:
         self.invert_button = tk.Button(self.root, text="Invert Colors", command=self.invert_colors)
         self.invert_button.pack(pady=10)
 
+        # Area selection
+        self.select_area_button = tk.Button(self.root, text="Select Area", command=self.activate_select_mode)
+        self.select_area_button.pack(pady=10)
+
+    # Rectangle-drawing mode
+    def activate_select_mode(self):
+        self.image_label.bind("<Button-1>", self.start_rect)
+        self.image_label.bind("<B1-Motion>", self.draw_rect)
+        self.image_label.bind("<ButtonRelease-1>", self.end_rect)
+        self.start_x = None
+        self.start_y = None
+        self.rect_id = None
+
+    def start_rect(self, event):
+        # Store starting point
+        self.start_x = self.image_label.canvasx(event.x)
+        self.start_y = self.image_label.canvasy(event.y)
+
+    def draw_rect(self, event):
+        # Update rectangle as mouse is dragged
+        if not self.rect_id:
+            self.rect_id = self.image_label.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline='red')
+        else:
+            self.image_label.coords(self.rect_id, self.start_x, self.start_y, self.image_label.canvasx(event.x), self.image_label.canvasy(event.y))
+
+    def end_rect(self, event):
+        # Finalize rectangle and process the selected area
+        self.image_label.coords(self.rect_id, self.start_x, self.start_y, self.image_label.canvasx(event.x), self.image_label.canvasy(event.y))
+        self.process_selected_area()
+
+    def process_selected_area(self):
+        # Get rectangle coordinates
+        coords = self.image_label.coords(self.rect_id)
+        roi = self.image.crop((coords[0], coords[1], coords[2], coords[3]))
+
+        # OCR the selected area
+        ocr_text = pytesseract.image_to_string(roi)
+        self.text_area.delete(1.0, tk.END)
+        self.text_area.insert(tk.END, ocr_text)
+
     def invert_colors(self):
         # Convert the image to RGB mode if it's not already
         if self.image.mode != 'RGB':
@@ -61,14 +115,22 @@ class OCRCopyPastePad:
         # Convert to grayscale
         gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
         
+        # Upscale the image
+        upscale_factor = 3  # You can adjust this factor as needed
+        upscaled = cv2.resize(gray, (gray.shape[1] * upscale_factor, gray.shape[0] * upscale_factor))
+        
+        # Apply Gaussian blur
+        blurred = cv2.GaussianBlur(upscaled, (5, 5), 0)
+        
         # Apply adaptive thresholding
-        thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+        
+        # Dilation
+        kernel = np.ones((2,2), np.uint8)
+        dilated = cv2.dilate(thresh, kernel, iterations=1)
         
         # Convert back to PIL Image
-        image = Image.fromarray(thresh)
-        
-        # Resize for better OCR accuracy
-        image = image.resize((int(image.width * 1.5), int(image.height * 1.5)))
+        image = Image.fromarray(dilated)
         
         return image
 
@@ -129,8 +191,17 @@ class OCRCopyPastePad:
 
         # Display the resized original image
         photo = ImageTk.PhotoImage(display_image)
-        self.image_label.config(image=photo, text="")
-        self.image_label.image = photo
+        self.image_canvas.config(scrollregion=self.image_canvas.bbox(tk.ALL), width=display_image.width, height=display_image.height)
+        self.image_canvas.delete("all")  # Remove previous images
+        self.image_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+        self.image_canvas.image = photo
+
+        # OCR the processed image with the selected language
+        selected_language = self.language_var.get()
+        if selected_language == 'auto':
+            ocr_text = pytesseract.image_to_string(processed_image)
+        else:
+            ocr_text = pytesseract.image_to_string(processed_image, lang=selected_language)
 
     def detect_text_areas_and_ocr(self):
         # Convert the image to grayscale for processing
