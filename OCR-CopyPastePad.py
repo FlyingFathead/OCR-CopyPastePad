@@ -90,6 +90,12 @@ class OCRCopyPastePad:
         self.select_area_button = tk.Button(self.root, text="Select Area", command=self.activate_select_mode)
         self.select_area_button.pack(pady=10)
 
+        # Status
+        self.status_var = tk.StringVar()
+        self.status_var.set("Ready")
+        self.status_bar = tk.Label(self.root, textvariable=self.status_var, bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
     # Rectangle-drawing mode
     def activate_select_mode(self):
         self.image_label.bind("<Button-1>", self.start_rect)
@@ -127,6 +133,8 @@ class OCRCopyPastePad:
         self.text_area.insert(tk.END, ocr_text)
 
     def invert_colors(self):
+        self.status_var.set("Inverting image colors...")
+
         # Convert the image to RGB mode if it's not already
         if self.image.mode != 'RGB':
             self.image = self.image.convert('RGB')
@@ -136,7 +144,11 @@ class OCRCopyPastePad:
         self.image = inverted_image
         self.process_image(inverted_image)
 
+        self.status_var.set("Image colors inverted.")
+
     def preprocess_image(self, image):
+        self.status_var.set("Pre-processing image...")
+
         # Convert to grayscale
         gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
         
@@ -159,10 +171,13 @@ class OCRCopyPastePad:
         
         # Convert back to PIL Image
         image = Image.fromarray(dilated)
+
+        self.status_var.set("Image pre-processing done.")
         
         return image
 
     def load_image(self):
+        self.status_var.set("Loading image...")   
         file_path = filedialog.askopenfilename(title="Select an image", filetypes=[("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.tiff")])
         if not file_path:
             return
@@ -179,6 +194,7 @@ class OCRCopyPastePad:
         self.paste_image()
 
     def paste_image(self):
+        self.status_var.set("Processing copy-pasted image...")      
         try:
             clipboard_content = ImageGrab.grabclipboard()
 
@@ -245,7 +261,11 @@ class OCRCopyPastePad:
         self.image_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
         self.image_canvas.image = photo
 
+        self.status_var.set("Processing done.")
+
     def detect_text_areas_and_ocr(self):
+        self.status_var.set("Detecting text areas with EasyOCR...")
+
         # Use easyocr for text detection
         results = self.reader.readtext(np.array(self.image))
         
@@ -298,6 +318,8 @@ class OCRCopyPastePad:
         # Display the grouped and merged texts
         self.text_area.delete(1.0, tk.END)
         self.text_area.insert(tk.END, "\n".join(grouped_texts))
+
+        self.status_var.set("EasyOCR text detection done.")
 
     def extract_boxes(self, scores, geometry):
         (numRows, numCols) = scores.shape[2:4]
