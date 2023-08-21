@@ -1,6 +1,6 @@
 # OCR-CopyPastePad
 
-A simple GUI tool for OCR image-to-text processing that uses Python + `tkinter` + `pytesseract` + `python-opencv`.
+A simple GUI tool for OCR image-to-text processing that uses Python + `tkinter` + `pytesseract` + `python-opencv` + `easyocr`.
 
 ![OCR-CopyPastePad screenshot](https://github.com/FlyingFathead/OCR-CopyPastePad/blob/main/OCR-CopyPastePad.png)
 
@@ -25,7 +25,7 @@ cd OCR-CopyPastePad/
 ```
 pip install -U requirements.txt
 ```
-(or, manually: `pip install -U pytesseract Pillow python-opencv`)
+(or, manually: `pip install -U pytesseract Pillow python-opencv easyocr`)
 3. Run the program
 ```
 python OCR-CopyPastePad.py
@@ -45,6 +45,7 @@ python OCR-CopyPastePad_no_OpenCV_ROI.py
 - Note that results may vary between source texts etc. -- in some cases, running the non-OpenCV version might actually yield more accurate results. OCR is a... thing.
 
 # Changelog
+- `v0.11`: Added support for EasyOCR for a more precise OCR interpretation, program runs `pytesseract` by default, more "in-depth" OCR:ing can be done with `easyocr` (EasyOCR's model is downloaded automatically upon first run if not installed).
 - `v0.09`: Added image dilation+internal resize (times 3 by default) for better OCR accuracy, Tesseract language selection, other stuff WIP.
 - `v0.08`: Added the GUI option to invert image colors for better OCR accuracy.
 
