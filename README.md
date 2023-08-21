@@ -47,7 +47,7 @@ python OCR-CopyPastePad_no_OpenCV_ROI.py
 - Note that results may vary between source texts etc. -- in some cases, running the non-OpenCV version might actually yield more accurate results. OCR is a... thing.
 
 # Changelog
-- `v0.12`: Better clipboard handling
+- `v0.12`: Better clipboard handling, OCR processing status text display
 - `v0.11`: Added support for EasyOCR for a more precise OCR interpretation, program runs `pytesseract` by default, more "in-depth" OCR:ing can be done with `easyocr` (EasyOCR's model is downloaded automatically upon first run if not installed).
 - `v0.09`: Added image dilation+internal resize (times 3 by default) for better OCR accuracy, Tesseract language selection, other stuff WIP.
 - `v0.08`: Added the GUI option to invert image colors for better OCR accuracy.
