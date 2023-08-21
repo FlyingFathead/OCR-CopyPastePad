@@ -177,14 +177,31 @@ class OCRCopyPastePad:
         try:
             clipboard_content = ImageGrab.grabclipboard()
 
-            if isinstance(clipboard_content, Image.Image):
+            # If the clipboard_content is a list, get the first item (assuming it's the path)
+            if isinstance(clipboard_content, list) and len(clipboard_content) > 0:
+                clipboard_content = clipboard_content[0]
+
+            # Check if the clipboard_content is a string (i.e., a path)
+            if isinstance(clipboard_content, str):
+                if clipboard_content.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp')):
+                    if os.path.exists(clipboard_content):
+                        self.image = Image.open(clipboard_content)
+                        self.process_image(self.image)
+                        return
+                    else:
+                        raise ValueError(f"Image path from clipboard does not exist: {clipboard_content}.")
+                else:
+                    raise ValueError(f"Unsupported content in the clipboard (string but not a known image path): {clipboard_content}.")
+
+            # Check if the clipboard_content is an actual image
+            elif isinstance(clipboard_content, Image.Image):
                 self.image = clipboard_content
                 self.process_image(clipboard_content)
                 return
-            elif clipboard_content is not None:
-                raise ValueError("Unsupported content in the clipboard. Please copy an image.")
 
-            raise ValueError("No image data found in the clipboard.")
+            else:
+                raise ValueError(f"Unsupported content type in the clipboard: {type(clipboard_content)}. Content: {clipboard_content}")
+
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -228,12 +245,12 @@ class OCRCopyPastePad:
         
         # Sort results based on vertical position, and then by horizontal position
         sorted_results = sorted(results, key=lambda r: (r[0][0][1], r[0][0][0]))
-        
+
         # Helper functions
-        def is_horizontally_close(box1, box2, threshold=50):
-            _, _, right1, _ = box1
-            left2, _, _, _ = box2
-            return (left2[0] - right1[0]) < threshold
+        def is_in_same_line(box1, box2, vertical_threshold=20, horizontal_threshold=200):
+            top1, _, _, bottom1 = box1
+            top2, _, _, bottom2 = box2
+            return abs(top1[1] - top2[1]) < vertical_threshold and abs(bottom1[0] - top2[0]) < horizontal_threshold
 
         # Group adjacent bounding boxes and merge their texts
         grouped_texts = []
@@ -243,7 +260,7 @@ class OCRCopyPastePad:
             prev_bbox = sorted_results[i - 1][0]
             current_bbox = sorted_results[i][0]
 
-            if is_horizontally_close(prev_bbox, current_bbox):
+            if is_in_same_line(prev_bbox, current_bbox):
                 current_group.append(sorted_results[i][1])
             else:
                 grouped_texts.append(' '.join(current_group))
@@ -271,8 +288,8 @@ class OCRCopyPastePad:
         
         # Display the grouped and merged texts
         self.text_area.delete(1.0, tk.END)
-        self.text_area.insert(tk.END, "\n\n".join(grouped_texts))
-    
+        self.text_area.insert(tk.END, "\n".join(grouped_texts))
+
     def extract_boxes(self, scores, geometry):
         (numRows, numCols) = scores.shape[2:4]
         rects = []  # Initialization for the bounding box (rect) coordinates for text regions
