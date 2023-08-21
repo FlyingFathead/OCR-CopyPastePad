@@ -168,6 +168,11 @@ class OCRCopyPastePad:
             return
 
         self.image = Image.open(file_path)
+        
+        # Convert image to RGB if need be
+        if self.image.mode != 'RGB':
+            self.image = self.image.convert('RGB')
+        
         self.process_image(self.image)
 
     def paste_image_event(self, event=None):
@@ -186,6 +191,8 @@ class OCRCopyPastePad:
                 if clipboard_content.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.webp')):
                     if os.path.exists(clipboard_content):
                         self.image = Image.open(clipboard_content)
+                        if self.image.mode != 'RGB':
+                            self.image = self.image.convert('RGB')
                         self.process_image(self.image)
                         return
                     else:
@@ -196,6 +203,8 @@ class OCRCopyPastePad:
             # Check if the clipboard_content is an actual image
             elif isinstance(clipboard_content, Image.Image):
                 self.image = clipboard_content
+                if self.image.mode != 'RGB':
+                    self.image = self.image.convert('RGB')
                 self.process_image(clipboard_content)
                 return
 
