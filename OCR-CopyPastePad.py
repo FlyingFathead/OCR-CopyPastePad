@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.11 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.12 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -12,7 +12,7 @@ import urllib.request
 import easyocr
 
 # Current version
-VERSION = "v0.11"
+VERSION = "v0.12"
 
 # reader = easyocr.Reader(['en'])  # Load once at the beginning
 
@@ -175,29 +175,14 @@ class OCRCopyPastePad:
 
     def paste_image(self):
         try:
-            # First, try to get the image directly
             clipboard_content = ImageGrab.grabclipboard()
-            
+
             if isinstance(clipboard_content, Image.Image):
                 self.image = clipboard_content
                 self.process_image(clipboard_content)
                 return
-
-            # Second, if clipboard_content has a 'name' attribute (like a file object), use it
-            file_path_or_url = getattr(clipboard_content, 'name', None)  
-            
-            if file_path_or_url:
-                if os.path.exists(file_path_or_url) and os.path.isfile(file_path_or_url):
-                    # If it's a local file path
-                    self.image = Image.open(file_path_or_url)
-                    self.process_image(self.image)
-                    return
-                elif file_path_or_url.startswith("http"):
-                    # If it's a URL
-                    with urllib.request.urlopen(file_path_or_url) as response:
-                        self.image = Image.open(response)
-                        self.process_image(self.image)
-                        return
+            elif clipboard_content is not None:
+                raise ValueError("Unsupported content in the clipboard. Please copy an image.")
 
             raise ValueError("No image data found in the clipboard.")
         except Exception as e:
