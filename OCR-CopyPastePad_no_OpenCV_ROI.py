@@ -1,5 +1,6 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
 # v0.07 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# NOTE: this is an outdated version that doesn't support any of the newer features.
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -7,6 +8,8 @@ from PIL import Image, ImageTk, ImageGrab
 import pytesseract
 
 VERSION = "v0.06"
+
+print("warning, this is an outdated version!")
 
 class OCRCopyPastePad:
     def __init__(self, root):
