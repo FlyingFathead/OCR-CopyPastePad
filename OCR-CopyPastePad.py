@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.143 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.144 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -12,7 +12,7 @@ import urllib.request
 import easyocr
 
 # Current version
-VERSION = "v0.143"
+VERSION = "v0.144"
 
 # reader = easyocr.Reader(['en'])  # Load once at the beginning
 
@@ -85,6 +85,7 @@ class OCRCopyPastePad:
         self.image_canvas.bind("<B1-Motion>", self.draw_crop_rect)
         self.image_canvas.bind("<ButtonRelease-1>", self.end_crop)
         self.status_var.set("Crop mode activated. Draw a rectangle on the image area you want to OCR.")
+        self.root.update_idletasks()  # Allow GUI to update
         
     # Crop tool -- 2/4: Start the rectangle drawing
     def start_crop(self, event):
@@ -106,6 +107,8 @@ class OCRCopyPastePad:
         self.resize_and_display(cropped_image)  # Use the new method here
 
         self.status_var.set("Image cropped to selected region.")
+        self.root.update_idletasks()  # Allow GUI to update
+
         self.crop_button.config(relief=tk.RAISED) # button raised
 
     def handle_language_change(self, *args):
@@ -176,12 +179,14 @@ class OCRCopyPastePad:
     # Use pytesseract to detect and recognize text.
     def detect_with_tesseract(self):    
         self.status_var.set("Detecting text with Pytesseract...")
+        self.root.update_idletasks()  # Allow GUI to update
         
         ocr_text = pytesseract.image_to_string(self.image)
         self.text_area.delete(1.0, tk.END)
         self.text_area.insert(tk.END, ocr_text)
         
         self.status_var.set("Pytesseract OCR done.")
+        self.root.update_idletasks()  # Allow GUI to update
 
     # Rectangle-drawing mode
     def activate_select_mode(self):
@@ -221,6 +226,7 @@ class OCRCopyPastePad:
 
     def invert_colors(self):
         self.status_var.set("Inverting image colors...")
+        self.root.update_idletasks()  # Allow GUI to update
 
         # Convert the image to RGB mode if it's not already
         if self.image.mode != 'RGB':
@@ -234,9 +240,11 @@ class OCRCopyPastePad:
         self.resize_and_display(inverted_image)  # Use the new method here
 
         self.status_var.set("Image colors inverted.")
+        self.root.update_idletasks()  # Allow GUI to update
 
     def preprocess_image(self, image):
         self.status_var.set("Pre-processing image...")
+        self.root.update_idletasks()  # Allow GUI to update
 
         # Convert to grayscale
         gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
@@ -262,6 +270,7 @@ class OCRCopyPastePad:
         image = Image.fromarray(dilated)
 
         self.status_var.set("Image pre-processing done.")
+        self.root.update_idletasks()  # Allow GUI to update
         
         return image
 
@@ -283,7 +292,8 @@ class OCRCopyPastePad:
         self.paste_image()
 
     def paste_image(self):
-        self.status_var.set("Processing copy-pasted image...")      
+        self.status_var.set("Image pasted in. Processing copy-pasted image...")
+        self.root.update_idletasks()  # Allow GUI to update
         try:
             clipboard_content = ImageGrab.grabclipboard()
 
@@ -305,6 +315,9 @@ class OCRCopyPastePad:
                         # self.process_image(self.image)
                         self.detect_with_tesseract()  # Directly call Tesseract OCR
                         self.display_image_on_canvas(self.image)  # Update the image display
+                        self.status_var.set("Image processed from clipboard.")
+                        self.root.update_idletasks()  # Allow GUI to update
+
                         return
                     else:
                         raise ValueError(f"Image path from clipboard does not exist: {clipboard_content}.")
@@ -319,6 +332,8 @@ class OCRCopyPastePad:
                 # self.process_image(clipboard_content)
                 self.detect_with_tesseract()  # Directly call Tesseract OCR
                 self.display_image_on_canvas(self.image)  # Update the image display
+                self.status_var.set("Image processed from clipboard.")
+                self.root.update_idletasks()  # Allow GUI to update
                 return
 
             else:
@@ -353,6 +368,9 @@ class OCRCopyPastePad:
 
     def process_image(self, image):
 
+        self.status_var.set("Processing image...")
+        self.root.update_idletasks()  # Allow GUI to update
+
         self.image_loaded = True
 
         # Preprocess the image for better OCR accuracy
@@ -384,9 +402,11 @@ class OCRCopyPastePad:
         self.display_image_on_canvas(self.image)  # Update the image display
 
         self.status_var.set("Processing done.")
+        self.root.update_idletasks()  # Allow GUI to update        
 
     def detect_text_areas_and_ocr(self):
         self.status_var.set("Detecting text areas with EasyOCR...")
+        self.root.update_idletasks()  # Allow GUI to update
 
         # Check if the image should be inverted
         if self.should_invert(self.image):
@@ -462,6 +482,7 @@ class OCRCopyPastePad:
         self.resize_and_display(annotated_image_pil)  # Use the new method here
 
         self.status_var.set("EasyOCR text detection done.")
+        self.root.update_idletasks()  # Allow GUI to update
 
     # merge overlapping boxes
     def merge_overlapping_boxes(self, boxes):
