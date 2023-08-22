@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.14 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.141 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -12,7 +12,7 @@ import urllib.request
 import easyocr
 
 # Current version
-VERSION = "v0.14"
+VERSION = "v0.141"
 
 # reader = easyocr.Reader(['en'])  # Load once at the beginning
 
@@ -57,6 +57,8 @@ class OCRCopyPastePad:
         self.paned_window.add(self.right_panel)
         self.right_panel.pack_propagate(True)  # Let the panel resize based on its content
 
+        self.handle_resize()  # Set initial state of the right pane
+
     # Crop tool -- 1/4: Activate the crop mode
     def activate_crop_mode(self):
 
@@ -96,8 +98,8 @@ class OCRCopyPastePad:
     def handle_resize(self, event=None):
         # Calculate the new position of the sash (divider) based on the right panel's actual width
         self.right_panel.update_idletasks()  # Ensure right_panel width is updated
-        new_sash_pos = self.root.winfo_width() - self.right_panel.winfo_width()
-        self.paned_window.sash_place(0, new_sash_pos, 0)
+        right_panel_width = self.right_panel.winfo_width()
+        self.paned_window.paneconfigure(self.right_panel, minsize=right_panel_width)  # Fix the right panel width
 
     def create_widgets(self):
         # PanedWindow
@@ -115,13 +117,14 @@ class OCRCopyPastePad:
         # Right-hand panel
         self.right_panel = tk.Frame(self.root)
         self.paned_window.add(self.right_panel)
-        self.right_panel.update_idletasks()
-        right_panel_width = self.right_panel.winfo_width()
-        self.paned_window.paneconfigure(self.right_panel, minsize=right_panel_width)
 
         # Load image button
         self.load_button = tk.Button(self.right_panel, text="Load Image", command=self.load_image)
         self.load_button.pack(pady=10, fill=tk.X)
+
+        # Detect text areas button with Pytesseract
+        self.detect_tesseract_button = tk.Button(self.right_panel, text="OCR with Pytesseract", command=self.detect_with_tesseract)
+        self.detect_tesseract_button.pack(pady=10, fill=tk.X)        
 
         # Detect text areas button
         self.detect_button = tk.Button(self.right_panel, text="Text area detection OCR with EasyOCR", command=self.detect_text_areas_and_ocr)
@@ -153,6 +156,15 @@ class OCRCopyPastePad:
         self.status_bar = tk.Label(self.root, textvariable=self.status_var, bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
+    # Use pytesseract to detect and recognize text.
+    def detect_with_tesseract(self):    
+        self.status_var.set("Detecting text with Pytesseract...")
+        
+        ocr_text = pytesseract.image_to_string(self.image)
+        self.text_area.delete(1.0, tk.END)
+        self.text_area.insert(tk.END, ocr_text)
+        
+        self.status_var.set("Pytesseract OCR done.")
 
     # Rectangle-drawing mode
     def activate_select_mode(self):
@@ -391,7 +403,43 @@ class OCRCopyPastePad:
         self.text_area.delete(1.0, tk.END)
         self.text_area.insert(tk.END, "\n".join([text for _, text in combined_texts]))
 
+        # Use easyocr for text detection
+        results = self.reader.readtext(np.array(self.image))
+        
+        # Debugging: Print raw detections
+        print(results)  # <-- Insert the debugging code here
+
         self.status_var.set("EasyOCR text detection done.")
+
+    # merge overlapping boxes
+    def merge_overlapping_boxes(self, boxes):
+        if not boxes:
+            return []
+
+        # Sort the boxes by their starting y-coordinate, then by their starting x-coordinate
+        boxes = sorted(boxes, key=lambda x: (x[1], x[0]))
+
+        merged_boxes = [boxes[0]]
+
+        for i in range(1, len(boxes)):
+            prev_box = merged_boxes[-1]
+            curr_box = boxes[i]
+
+            # Check for overlap; if the start of the current box is before the end of the previous box, they overlap
+            if prev_box[2] >= curr_box[0] and prev_box[3] >= curr_box[1]:
+                # Merge the current box into the previous box
+                merged_box = (
+                    min(prev_box[0], curr_box[0]),
+                    min(prev_box[1], curr_box[1]),
+                    max(prev_box[2], curr_box[2]),
+                    max(prev_box[3], curr_box[3])
+                )
+                merged_boxes[-1] = merged_box
+            else:
+                # No overlap; add the current box as is
+                merged_boxes.append(curr_box)
+
+        return merged_boxes
 
     def extract_boxes(self, scores, geometry):
         (numRows, numCols) = scores.shape[2:4]
@@ -435,57 +483,60 @@ class OCRCopyPastePad:
                 confidences.append(scoresData[x])
 
         # Apply non-maxima suppression to suppress weak overlapping bounding boxes
-        boxes = non_max_suppression(np.array(rects), probs=confidences)
+        # boxes = non_max_suppression(np.array(rects), probs=confidences)
+
+        # merging overlapping boxes
+        boxes = self.merge_overlapping_boxes(rects)  # Note the `self.` prefix
 
         return boxes
     
-def non_max_suppression(boxes, probs=None, overlapThresh=0.3):
-    # If there are no boxes, return an empty list
-    if len(boxes) == 0:
-        return []
+    def non_max_suppression(boxes, probs=None, overlapThresh=0.3):
+        # If there are no boxes, return an empty list
+        if len(boxes) == 0:
+            return []
 
-    # If the bounding boxes are integers, convert them to floats
-    if boxes.dtype.kind == "i":
-        boxes = boxes.astype("float")
+        # If the bounding boxes are integers, convert them to floats
+        if boxes.dtype.kind == "i":
+            boxes = boxes.astype("float")
 
-    # Initialize the list of picked indexes
-    pick = []
+        # Initialize the list of picked indexes
+        pick = []
 
-    # Grab the coordinates of the bounding boxes
-    x1 = boxes[:, 0]
-    y1 = boxes[:, 1]
-    x2 = boxes[:, 2]
-    y2 = boxes[:, 3]
+        # Grab the coordinates of the bounding boxes
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
 
-    # Compute the area of the bounding boxes and sort the bounding boxes by the bottom-right y-coordinate of the bounding box
-    area = (x2 - x1 + 1) * (y2 - y1 + 1)
-    idxs = np.argsort(probs)
+        # Compute the area of the bounding boxes and sort the bounding boxes by the bottom-right y-coordinate of the bounding box
+        area = (x2 - x1 + 1) * (y2 - y1 + 1)
+        idxs = np.argsort(probs)
 
-    # Keep looping while some indexes still remain in the indexes list
-    while len(idxs) > 0:
-        # Grab the last index in the indexes list and add the index value to the list of picked indexes
-        last = len(idxs) - 1
-        i = idxs[last]
-        pick.append(i)
+        # Keep looping while some indexes still remain in the indexes list
+        while len(idxs) > 0:
+            # Grab the last index in the indexes list and add the index value to the list of picked indexes
+            last = len(idxs) - 1
+            i = idxs[last]
+            pick.append(i)
 
-        # Find the largest (x, y) coordinates for the start of the bounding box and the smallest (x, y) coordinates for the end of the bounding box
-        xx1 = np.maximum(x1[i], x1[idxs[:last]])
-        yy1 = np.maximum(y1[i], y1[idxs[:last]])
-        xx2 = np.minimum(x2[i], x2[idxs[:last]])
-        yy2 = np.minimum(y2[i], y2[idxs[:last]])
+            # Find the largest (x, y) coordinates for the start of the bounding box and the smallest (x, y) coordinates for the end of the bounding box
+            xx1 = np.maximum(x1[i], x1[idxs[:last]])
+            yy1 = np.maximum(y1[i], y1[idxs[:last]])
+            xx2 = np.minimum(x2[i], x2[idxs[:last]])
+            yy2 = np.minimum(y2[i], y2[idxs[:last]])
 
-        # Compute the width and height of the bounding box
-        w = np.maximum(0, xx2 - xx1 + 1)
-        h = np.maximum(0, yy2 - yy1 + 1)
+            # Compute the width and height of the bounding box
+            w = np.maximum(0, xx2 - xx1 + 1)
+            h = np.maximum(0, yy2 - yy1 + 1)
 
-        # Compute the ratio of overlap between the computed bounding box and the bounding box in the area list
-        overlap = (w * h) / area[idxs[:last]]
+            # Compute the ratio of overlap between the computed bounding box and the bounding box in the area list
+            overlap = (w * h) / area[idxs[:last]]
 
-        # Delete all indexes from the index list that have overlap greater than the provided overlap threshold
-        idxs = np.delete(idxs, np.concatenate(([last], np.where(overlap > overlapThresh)[0])))
+            # Delete all indexes from the index list that have overlap greater than the provided overlap threshold
+            idxs = np.delete(idxs, np.concatenate(([last], np.where(overlap > overlapThresh)[0])))
 
-    # Return only the bounding boxes that were picked using the integer data type
-    return boxes[pick].astype("int")
+        # Return only the bounding boxes that were picked using the integer data type
+        return boxes[pick].astype("int")
 
 if __name__ == "__main__":
     root = tk.Tk()
