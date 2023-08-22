@@ -47,7 +47,7 @@ python OCR-CopyPastePad_no_OpenCV_ROI.py
 - Note that results may vary between source texts etc. -- in some cases, running the non-OpenCV version might actually yield more accurate results. OCR is a... thing.
 
 # Changelog
-- `v0.145`: ROI sorting logic redone for EasyOCR material
+- `v0.145`: ROI sorting logic redone for EasyOCR processing
 - `v0.144`: Fixes to status update threading
 - `v0.143`: small changes to the overall OCR pipeline; preprocess to check if i.e. color inversion is needed
 - `v0.14`: crop function, better EasyOCR line detection
