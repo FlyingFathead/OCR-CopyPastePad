@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.144 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.145 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -12,7 +12,7 @@ import urllib.request
 import easyocr
 
 # Current version
-VERSION = "v0.144"
+VERSION = "v0.145"
 
 # reader = easyocr.Reader(['en'])  # Load once at the beginning
 
@@ -414,14 +414,32 @@ class OCRCopyPastePad:
 
         # Use easyocr for text detection
         results = self.reader.readtext(np.array(self.image))
-        
-        # Image to draw bounding boxes on
-        annotated_image = np.array(self.image)
-        
+
         # Sort results based on vertical position, then by horizontal position
         sorted_results = sorted(results, key=lambda r: (r[0][0][1], r[0][0][0]))
 
-        # Combine overlapping boxes
+        # Group boxes by lines based on y-coordinate
+        LINE_THRESHOLD = 10  # Adjust this based on your requirements
+        lines = []
+        current_line = [sorted_results[0]]
+
+        for i in range(1, len(sorted_results)):
+            if abs(sorted_results[i][0][0][1] - current_line[-1][0][0][1]) < LINE_THRESHOLD:
+                current_line.append(sorted_results[i])
+            else:
+                lines.append(current_line)
+                current_line = [sorted_results[i]]
+
+        lines.append(current_line)  # Add the last line
+
+        # Sort boxes within each line by x-coordinate
+        for line in lines:
+            line.sort(key=lambda r: r[0][0][0])
+
+        # Flatten the sorted results
+        sorted_results = [box for line in lines for box in line]
+
+        # Continue with your logic to combine overlapping boxes
         combined_texts = []
         current_group = [sorted_results[0]]
         for i in range(1, len(sorted_results)):
@@ -429,7 +447,7 @@ class OCRCopyPastePad:
             current_bbox = sorted_results[i][0]
 
             # Check if the boxes overlap vertically
-            if prev_bbox[2][1] > current_bbox[0][1]:  # checking if the end of the previous box is after the start of the current box
+            if prev_bbox[2][1] > current_bbox[0][1]:  
                 current_group.append(sorted_results[i])
             else:
                 # Merge the current group into a single bounding box
@@ -454,6 +472,9 @@ class OCRCopyPastePad:
                 ], ' '.join([text for _, text, _ in current_group]))
             )
 
+        # Image to draw bounding boxes on
+        annotated_image = np.array(self.image)
+
         # Draw bounding boxes for visualization
         for (box, text) in combined_texts:
             startX, startY, endX, endY = box
@@ -461,23 +482,20 @@ class OCRCopyPastePad:
 
         # Convert the annotated image back to PIL format
         annotated_image_pil = Image.fromarray(annotated_image)
-        
+
         # Display the annotated image on the canvas
         photo = ImageTk.PhotoImage(annotated_image_pil)
         self.image_canvas.config(scrollregion=self.image_canvas.bbox(tk.ALL), width=annotated_image_pil.width, height=annotated_image_pil.height)
         self.image_canvas.delete("all")  # Remove previous images
         self.image_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
         self.image_canvas.image = photo
-        
+
         # Display the combined texts
         self.text_area.delete(1.0, tk.END)
         self.text_area.insert(tk.END, "\n".join([text for _, text in combined_texts]))
 
-        # Use easyocr for text detection
-        results = self.reader.readtext(np.array(self.image))
-        
         # Debugging: Print raw detections
-        print(results)  # <-- Insert the debugging code here
+        print(results)
 
         self.resize_and_display(annotated_image_pil)  # Use the new method here
 
