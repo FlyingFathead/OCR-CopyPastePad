@@ -25,7 +25,7 @@ cd OCR-CopyPastePad/
 ```
 2. Install the prerequisites
 ```
-pip install -U requirements.txt
+pip install -r requirements.txt
 ```
 (or, manually: `pip install -U pytesseract Pillow python-opencv easyocr`)
 3. Run the program
