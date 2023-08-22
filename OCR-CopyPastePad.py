@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.142 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.143 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -12,7 +12,7 @@ import urllib.request
 import easyocr
 
 # Current version
-VERSION = "v0.142"
+VERSION = "v0.143"
 
 # reader = easyocr.Reader(['en'])  # Load once at the beginning
 
@@ -287,6 +287,10 @@ class OCRCopyPastePad:
         try:
             clipboard_content = ImageGrab.grabclipboard()
 
+            # Convert the clipboard_content to RGB mode
+            if isinstance(clipboard_content, Image.Image) and clipboard_content.mode != 'RGB':
+                clipboard_content = clipboard_content.convert('RGB')
+
             # If the clipboard_content is a list, get the first item (assuming it's the path)
             if isinstance(clipboard_content, list) and len(clipboard_content) > 0:
                 clipboard_content = clipboard_content[0]
@@ -298,7 +302,9 @@ class OCRCopyPastePad:
                         self.image = Image.open(clipboard_content)
                         if self.image.mode != 'RGB':
                             self.image = self.image.convert('RGB')
-                        self.process_image(self.image)
+                        # self.process_image(self.image)
+                        self.detect_with_tesseract()  # Directly call Tesseract OCR
+                        self.display_image_on_canvas(self.image)  # Update the image display
                         return
                     else:
                         raise ValueError(f"Image path from clipboard does not exist: {clipboard_content}.")
@@ -310,7 +316,9 @@ class OCRCopyPastePad:
                 self.image = clipboard_content
                 if self.image.mode != 'RGB':
                     self.image = self.image.convert('RGB')
-                self.process_image(clipboard_content)
+                # self.process_image(clipboard_content)
+                self.detect_with_tesseract()  # Directly call Tesseract OCR
+                self.display_image_on_canvas(self.image)  # Update the image display
                 return
 
             else:
@@ -318,6 +326,18 @@ class OCRCopyPastePad:
 
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
+    def display_image_on_canvas(self, image):
+        """Display the provided image on the canvas."""
+        # Resize the original image for display
+        display_image = self.resize_image_for_display(image)
+
+        # Display the resized original image
+        photo = ImageTk.PhotoImage(display_image)
+        self.image_canvas.config(scrollregion=self.image_canvas.bbox(tk.ALL), width=display_image.width, height=display_image.height)
+        self.image_canvas.delete("all")  # Remove previous images
+        self.image_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+        self.image_canvas.image = photo
 
     def resize_image_for_display(self, image, max_width=500, max_height=400):
         """Resize the image to fit within the specified dimensions."""
@@ -338,6 +358,10 @@ class OCRCopyPastePad:
         # Preprocess the image for better OCR accuracy
         processed_image = self.preprocess_image(image)
 
+        # Check if the image should be inverted
+        if self.should_invert(image):
+            image = ImageOps.invert(image)
+
         # OCR the processed image
         ocr_text = pytesseract.image_to_string(processed_image)
         self.text_area.delete(1.0, tk.END)
@@ -357,11 +381,16 @@ class OCRCopyPastePad:
         self.image_canvas.image = photo
 
         self.resize_and_display(image)  # Use the new method here        
+        self.display_image_on_canvas(self.image)  # Update the image display
 
         self.status_var.set("Processing done.")
 
     def detect_text_areas_and_ocr(self):
         self.status_var.set("Detecting text areas with EasyOCR...")
+
+        # Check if the image should be inverted
+        if self.should_invert(self.image):
+            image = ImageOps.invert(self.image)
 
         # Use easyocr for text detection
         results = self.reader.readtext(np.array(self.image))
@@ -512,8 +541,24 @@ class OCRCopyPastePad:
         boxes = self.merge_overlapping_boxes(rects)  # Note the `self.` prefix
 
         return boxes
-    
-    def non_max_suppression(boxes, probs=None, overlapThresh=0.3):
+
+    # check if image needs to be inverted
+    def should_invert(self, image):
+        """
+        Determines if the image is primarily dark (e.g., white text on a black background).
+        Returns True if the image should be inverted, False otherwise.
+        """
+        # Convert image to RGB if need be
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        grayscale = image.convert("L")
+
+        grayscale = image.convert("L")
+        mean_pixel = np.mean(np.array(grayscale))
+        
+        return mean_pixel < 128
+
+    def non_max_suppression(self, boxes, probs=None, overlapThresh=0.3):
         # If there are no boxes, return an empty list
         if len(boxes) == 0:
             return []
