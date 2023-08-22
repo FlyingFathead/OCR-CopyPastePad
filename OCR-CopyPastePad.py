@@ -59,6 +59,20 @@ class OCRCopyPastePad:
 
         self.handle_resize()  # Set initial state of the right pane
 
+    # resize the image to always fit the canvas
+    def resize_and_display(self, image):
+        # Resize the image to fit within the canvas dimensions
+        max_width = self.image_canvas.winfo_width()
+        max_height = self.image_canvas.winfo_height()
+        resized_image = self.resize_image_for_display(image, max_width, max_height)
+
+        # Display the resized image on the canvas
+        photo = ImageTk.PhotoImage(resized_image)
+        self.image_canvas.config(scrollregion=self.image_canvas.bbox(tk.ALL), width=resized_image.width, height=resized_image.height)
+        self.image_canvas.delete("all")  # Remove previous images
+        self.image_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
+        self.image_canvas.image = photo
+
     # Crop tool -- 1/4: Activate the crop mode
     def activate_crop_mode(self):
 
@@ -88,6 +102,9 @@ class OCRCopyPastePad:
         cropped_image = self.image.crop((coords[0], coords[1], coords[2], coords[3]))
         self.image = cropped_image
         self.process_image(cropped_image)
+
+        self.resize_and_display(cropped_image)  # Use the new method here
+
         self.status_var.set("Image cropped to selected region.")
         self.crop_button.config(relief=tk.RAISED) # button raised
 
@@ -214,6 +231,8 @@ class OCRCopyPastePad:
         self.image = inverted_image
         self.process_image(inverted_image)
 
+        self.resize_and_display(inverted_image)  # Use the new method here
+
         self.status_var.set("Image colors inverted.")
 
     def preprocess_image(self, image):
@@ -337,6 +356,8 @@ class OCRCopyPastePad:
         self.image_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
         self.image_canvas.image = photo
 
+        self.resize_and_display(image)  # Use the new method here        
+
         self.status_var.set("Processing done.")
 
     def detect_text_areas_and_ocr(self):
@@ -408,6 +429,8 @@ class OCRCopyPastePad:
         
         # Debugging: Print raw detections
         print(results)  # <-- Insert the debugging code here
+
+        self.resize_and_display(annotated_image_pil)  # Use the new method here
 
         self.status_var.set("EasyOCR text detection done.")
 
