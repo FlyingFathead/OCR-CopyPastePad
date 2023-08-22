@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.12 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.14 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -12,13 +12,20 @@ import urllib.request
 import easyocr
 
 # Current version
-VERSION = "v0.12"
+VERSION = "v0.14"
 
 # reader = easyocr.Reader(['en'])  # Load once at the beginning
 
 class OCRCopyPastePad:
     def __init__(self, root):
+        
+        # Initialize the program
         self.root = root
+        self.crop_rect_id = None
+        
+        # make sure no image is loaded when program starts up
+        self.image_loaded = False
+        
         self.root.title(f"OCR-CopyPastePad {VERSION}")
 
         # Bind CTRL+V and Shift+Insert for paste events
@@ -39,32 +46,63 @@ class OCRCopyPastePad:
 
         # Create GUI components
         self.create_widgets()
-
-        # Language selection
-        self.language_var = tk.StringVar(self.root)
-        self.language_var.set('en')  # default value
-        self.language_dropdown = tk.OptionMenu(self.root, self.language_var, *self.languages)
-        self.language_dropdown.pack(pady=10)
-        self.language_label = tk.Label(self.root, text="Select OCR Language:")
-        self.language_label.pack(pady=10, before=self.language_dropdown)
         
         self.reader = easyocr.Reader([self.language_var.get()])  # Load once at the beginning
 
         # Bind the language dropdown to the change handler
         self.language_var.trace_add('write', self.handle_language_change)
 
+        # Right-hand panel
+        self.right_panel = tk.Frame(self.root)
+        self.paned_window.add(self.right_panel)
+        self.right_panel.pack_propagate(True)  # Let the panel resize based on its content
+
+    # Crop tool -- 1/4: Activate the crop mode
+    def activate_crop_mode(self):
+
+        if not self.image_loaded:
+            messagebox.showerror("Error", "No image loaded. Please load or paste an image first.")
+            return
+
+        self.crop_button.config(relief=tk.SUNKEN) # button graphics
+        self.image_canvas.bind("<Button-1>", self.start_crop)
+        self.image_canvas.bind("<B1-Motion>", self.draw_crop_rect)
+        self.image_canvas.bind("<ButtonRelease-1>", self.end_crop)
+        self.status_var.set("Crop mode activated. Draw a rectangle on the image area you want to OCR.")
+        
+    # Crop tool -- 2/4: Start the rectangle drawing
+    def start_crop(self, event):
+        self.crop_start_x = self.image_canvas.canvasx(event.x)
+        self.crop_start_y = self.image_canvas.canvasy(event.y)
+        self.crop_rect_id = self.image_canvas.create_rectangle(self.crop_start_x, self.crop_start_y, self.crop_start_x, self.crop_start_y, outline='red')
+
+    # Crop tool -- 3/4: Update rectangle while dragging
+    def draw_crop_rect(self, event):
+        self.image_canvas.coords(self.crop_rect_id, self.crop_start_x, self.crop_start_y, self.image_canvas.canvasx(event.x), self.image_canvas.canvasy(event.y))
+
+    # Crop tool -- 4/4: Crop the image to selected region
+    def end_crop(self, event):
+        coords = self.image_canvas.coords(self.crop_rect_id)
+        cropped_image = self.image.crop((coords[0], coords[1], coords[2], coords[3]))
+        self.image = cropped_image
+        self.process_image(cropped_image)
+        self.status_var.set("Image cropped to selected region.")
+        self.crop_button.config(relief=tk.RAISED) # button raised
+
     def handle_language_change(self, *args):
         """Re-initialize the EasyOCR reader with the new language."""
         self.reader = easyocr.Reader([self.language_var.get()])
+
+    def handle_resize(self, event=None):
+        # Calculate the new position of the sash (divider) based on the right panel's actual width
+        self.right_panel.update_idletasks()  # Ensure right_panel width is updated
+        new_sash_pos = self.root.winfo_width() - self.right_panel.winfo_width()
+        self.paned_window.sash_place(0, new_sash_pos, 0)
 
     def create_widgets(self):
         # PanedWindow
         self.paned_window = tk.PanedWindow(self.root, orient=tk.HORIZONTAL)
         self.paned_window.pack(fill=tk.BOTH, expand=1)
-
-        # Image panel
-        # self.image_label = tk.Label(self.paned_window, text="Image will be displayed here")
-        # self.paned_window.add(self.image_label)
 
         # Image panel (using Canvas instead of Label)
         self.image_canvas = tk.Canvas(self.paned_window)
@@ -74,27 +112,47 @@ class OCRCopyPastePad:
         self.text_area = tk.Text(self.paned_window, wrap=tk.WORD)
         self.paned_window.add(self.text_area)
 
+        # Right-hand panel
+        self.right_panel = tk.Frame(self.root)
+        self.paned_window.add(self.right_panel)
+        self.right_panel.update_idletasks()
+        right_panel_width = self.right_panel.winfo_width()
+        self.paned_window.paneconfigure(self.right_panel, minsize=right_panel_width)
+
         # Load image button
-        self.load_button = tk.Button(self.root, text="Load Image", command=self.load_image)
-        self.load_button.pack(pady=10)
+        self.load_button = tk.Button(self.right_panel, text="Load Image", command=self.load_image)
+        self.load_button.pack(pady=10, fill=tk.X)
 
         # Detect text areas button
-        self.detect_button = tk.Button(self.root, text="Text area detection OCR with EasyOCR", command=self.detect_text_areas_and_ocr)
-        self.detect_button.pack(pady=10)
+        self.detect_button = tk.Button(self.right_panel, text="Text area detection OCR with EasyOCR", command=self.detect_text_areas_and_ocr)
+        self.detect_button.pack(pady=10, fill=tk.X)
 
         # Invert colors button
-        self.invert_button = tk.Button(self.root, text="Invert Colors", command=self.invert_colors)
-        self.invert_button.pack(pady=10)
+        self.invert_button = tk.Button(self.right_panel, text="Invert Colors", command=self.invert_colors)
+        self.invert_button.pack(pady=10, fill=tk.X)
 
         # Area selection
-        self.select_area_button = tk.Button(self.root, text="Select Area", command=self.activate_select_mode)
-        self.select_area_button.pack(pady=10)
+        self.select_area_button = tk.Button(self.right_panel, text="Select Area", command=self.activate_select_mode)
+        self.select_area_button.pack(pady=10, fill=tk.X)
+
+        # Crop tool
+        self.crop_button = tk.Button(self.right_panel, text="Crop Image", command=self.activate_crop_mode)
+        self.crop_button.pack(pady=10, fill=tk.X)
+
+        # Language selection
+        self.language_var = tk.StringVar(self.right_panel)
+        self.language_var.set('en')  # default value
+        self.language_label = tk.Label(self.right_panel, text="Select OCR Language:")
+        self.language_label.pack(pady=10, fill=tk.X)
+        self.language_dropdown = tk.OptionMenu(self.right_panel, self.language_var, *self.languages)
+        self.language_dropdown.pack(pady=10, fill=tk.X)
 
         # Status
         self.status_var = tk.StringVar()
         self.status_var.set("Ready")
         self.status_bar = tk.Label(self.root, textvariable=self.status_var, bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
 
     # Rectangle-drawing mode
     def activate_select_mode(self):
@@ -243,6 +301,9 @@ class OCRCopyPastePad:
         return image.resize((width, height))
 
     def process_image(self, image):
+
+        self.image_loaded = True
+
         # Preprocess the image for better OCR accuracy
         processed_image = self.preprocess_image(image)
 
@@ -253,6 +314,9 @@ class OCRCopyPastePad:
 
         # Resize the original image for display
         display_image = self.resize_image_for_display(image)
+
+        # Clear cropping rectangle if it exists
+        self.image_canvas.delete(self.crop_rect_id)
 
         # Display the resized original image
         photo = ImageTk.PhotoImage(display_image)
@@ -272,38 +336,46 @@ class OCRCopyPastePad:
         # Image to draw bounding boxes on
         annotated_image = np.array(self.image)
         
-        # Sort results based on vertical position, and then by horizontal position
+        # Sort results based on vertical position, then by horizontal position
         sorted_results = sorted(results, key=lambda r: (r[0][0][1], r[0][0][0]))
 
-        # Helper functions
-        def is_in_same_line(box1, box2, vertical_threshold=20, horizontal_threshold=200):
-            top1, _, _, bottom1 = box1
-            top2, _, _, bottom2 = box2
-            return abs(top1[1] - top2[1]) < vertical_threshold and abs(bottom1[0] - top2[0]) < horizontal_threshold
-
-        # Group adjacent bounding boxes and merge their texts
-        grouped_texts = []
-        current_group = [sorted_results[0][1]]
-
+        # Combine overlapping boxes
+        combined_texts = []
+        current_group = [sorted_results[0]]
         for i in range(1, len(sorted_results)):
-            prev_bbox = sorted_results[i - 1][0]
+            prev_bbox = current_group[-1][0]
             current_bbox = sorted_results[i][0]
 
-            if is_in_same_line(prev_bbox, current_bbox):
-                current_group.append(sorted_results[i][1])
+            # Check if the boxes overlap vertically
+            if prev_bbox[2][1] > current_bbox[0][1]:  # checking if the end of the previous box is after the start of the current box
+                current_group.append(sorted_results[i])
             else:
-                grouped_texts.append(' '.join(current_group))
-                current_group = [sorted_results[i][1]]
+                # Merge the current group into a single bounding box
+                combined_texts.append(
+                    ([
+                        min([box[0][0] for box, _, _ in current_group]),
+                        min([box[0][1] for box, _, _ in current_group]),
+                        max([box[2][0] for box, _, _ in current_group]),
+                        max([box[2][1] for box, _, _ in current_group]),
+                    ], ' '.join([text for _, text, _ in current_group]))
+                )
+                current_group = [sorted_results[i]]
 
-        # Add the last group if any
+        # Merge the last group if any
         if current_group:
-            grouped_texts.append(' '.join(current_group))
-        
+            combined_texts.append(
+                ([
+                    min([box[0][0] for box, _, _ in current_group]),
+                    min([box[0][1] for box, _, _ in current_group]),
+                    max([box[2][0] for box, _, _ in current_group]),
+                    max([box[2][1] for box, _, _ in current_group]),
+                ], ' '.join([text for _, text, _ in current_group]))
+            )
+
         # Draw bounding boxes for visualization
-        for (bbox, text, prob) in sorted_results:
-            (top_left, top_right, bottom_right, bottom_left) = bbox
-            startX, startY, endX, endY = int(top_left[0]), int(top_left[1]), int(bottom_right[0]), int(bottom_right[1])
-            cv2.rectangle(annotated_image, (startX, startY), (endX, endY), (0, 255, 0), 2)
+        for (box, text) in combined_texts:
+            startX, startY, endX, endY = box
+            cv2.rectangle(annotated_image, (int(startX), int(startY)), (int(endX), int(endY)), (0, 255, 0), 2)
 
         # Convert the annotated image back to PIL format
         annotated_image_pil = Image.fromarray(annotated_image)
@@ -315,9 +387,9 @@ class OCRCopyPastePad:
         self.image_canvas.create_image(0, 0, anchor=tk.NW, image=photo)
         self.image_canvas.image = photo
         
-        # Display the grouped and merged texts
+        # Display the combined texts
         self.text_area.delete(1.0, tk.END)
-        self.text_area.insert(tk.END, "\n".join(grouped_texts))
+        self.text_area.insert(tk.END, "\n".join([text for _, text in combined_texts]))
 
         self.status_var.set("EasyOCR text detection done.")
 
