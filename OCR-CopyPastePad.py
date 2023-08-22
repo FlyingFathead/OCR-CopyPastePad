@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.141 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.142 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -12,7 +12,7 @@ import urllib.request
 import easyocr
 
 # Current version
-VERSION = "v0.141"
+VERSION = "v0.142"
 
 # reader = easyocr.Reader(['en'])  # Load once at the beginning
 
