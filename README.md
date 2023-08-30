@@ -57,8 +57,8 @@ python OCR-CopyPastePad_no_OpenCV_ROI.py
 - `v0.08`: Added the GUI option to invert image colors for better OCR accuracy.
 
 # Todo
-- [ ] Better implementation of the clipboard copy-paste-functionality
-- [ ] User-drawable rectangle regions of interest on image
+- [x] Better implementation of the clipboard copy-paste-functionality
+- [x] User-drawable rectangle regions of interest on image
 
 # About
 - Code on GitHub: https://github.com/FlyingFathead/OCR-CopyPastePad/
