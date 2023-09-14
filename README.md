@@ -18,6 +18,8 @@ The aim of the program is to simplify workflows, i.e. making it easy to copy-pas
 - Error Handling: Informative error messages guide users when issues arise, such as when non-image data is pasted.
 
 # Install
+This tool requires `Python` v3.4 or newer to run. You will also need `git` to clone the repository.
+
 1. Clone the repository
 ```
 git clone https://github.com/FlyingFathead/OCR-CopyPastePad/
