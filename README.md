@@ -20,23 +20,31 @@ The aim of the program is to simplify workflows, i.e. making it easy to copy-pas
 # Install
 This tool requires `Python` v3.4 or newer to run. You will also need `git` to clone the repository.
 
-1. Clone the repository
+**1. Clone the repository**
 ```
 git clone https://github.com/FlyingFathead/OCR-CopyPastePad/
 cd OCR-CopyPastePad/
 ```
-2. Install the prerequisites
+**2. Install the prerequisites**
 ```
 pip install -r requirements.txt
 ```
 (or, manually: `pip install -U pytesseract Pillow python-opencv easyocr`)
 
 You will also need to download the tesseract libraries and install them.
+
 - On Windows, download i.e. the pre-compiled installer: https://github.com/UB-Mannheim/tesseract/wiki
+  Note that on windows you need to add the installation directory to your PATH environment variable.
+  If you installed the UB-Mannheim Tesseract version for all users, you can do this in an administrator PowerShell with i.e.:
+  ```
+  [System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', [System.EnvironmentVariableTarget]::Machine) + ";C:\Program Files\Tesseract-OCR", [System.EnvironmentVariableTarget]::Machine)`
+  ```
+  The command above assumes that your install directory was `C:\Program Files\Tesseract-OCR\` -- change the command above accordingly to point to the correct directory!
+
 - On Linux, i.e. Ubuntu: `sudo apt install tesseract-ocr`
 - On MacOS, using Homebrew: `brew install tesseract`
 
-3. Run the program
+**3. Run the program**
 ```
 python OCR-CopyPastePad.py
 ```
