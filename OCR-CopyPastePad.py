@@ -1,5 +1,5 @@
 # OCR-CopyPastePad //  https://github.com/FlyingFathead/OCR-CopyPastePad/
-# v0.145 // Aug 2023 // FlyingFathead + ghost code by ChaosWhisperer
+# v0.146 // Sept 2023 // FlyingFathead + ghost code by ChaosWhisperer
 
 import tkinter as tk
 from tkinter import filedialog, messagebox
@@ -10,11 +10,46 @@ import numpy as np
 import os
 import urllib.request
 import easyocr
+import subprocess
+import shutil
 
 # Current version
-VERSION = "v0.145"
+VERSION = "v0.146"
 
 # reader = easyocr.Reader(['en'])  # Load once at the beginning
+def viivo():
+    # Get terminal width
+    columns = shutil.get_terminal_size().columns
+
+    # Print dashes equal to the terminal width
+    print('-' * columns)
+
+# check that the libraries exist
+def check_tesseract():
+    try:
+        # Run a simple Tesseract command to check if it's in PATH
+        subprocess.run(["tesseract", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Print an error message and installation instructions if Tesseract is not found
+        viivo()
+        print("Error: Tesseract OCR is not installed or it's not in your PATH.")
+        viivo()
+        print("Please install Tesseract to proceed.")
+        print()
+        print("Installation instructions:")
+        print()
+        print("  Windows: Download the installer from GitHub at")
+        print("  https://github.com/tesseract-ocr/tesseract/releases/latest")
+        print()
+        print("  macOS: Use Homebrew to install")
+        print("  brew install tesseract")
+        print()
+        print("  Linux: Use package manager to install, e.g.:")
+        print("  $ sudo apt-get install tesseract-ocr")
+        print()
+        viivo()
+        return False
+    return True
 
 class OCRCopyPastePad:
     def __init__(self, root):
@@ -646,6 +681,8 @@ class OCRCopyPastePad:
         return boxes[pick].astype("int")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = OCRCopyPastePad(root)
-    root.mainloop()
+    if check_tesseract():
+        import tkinter as tk  # Delay tkinter import to avoid GUI popup if Tesseract is missing
+        root = tk.Tk()
+        app = OCRCopyPastePad(root)
+        root.mainloop()
