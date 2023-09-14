@@ -45,8 +45,8 @@ python OCR-CopyPastePad.py
 1. Launch the OCR-CopyPastePad application (`python OCR-CopyPastePad.py`). You can also try out if your OCR results are better with the non-OpenCV version by running `python OCR-CopyPastePad_no_OpenCV_ROI.py`.
 2. Load an image using the "Load Image" button or paste an image directly into the application
 (in Windows you can use i.e. the snippet tool: `Shift + Winkey + S`).
-4. If desired, use the "Detect Text Areas" button to see highlighted regions of text in the image.
-5. The extracted text will automatically appear in the text pane on the right.
+3. If desired, use the "Detect Text Areas" button to see highlighted regions of text in the image.
+4. The extracted text will automatically appear in the text pane on the right.
 
 - Note that results may vary between source texts etc. -- in some cases, running the non-OpenCV version might actually yield more accurate results. OCR is a... thing.
 
