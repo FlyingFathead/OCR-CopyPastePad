@@ -28,6 +28,12 @@ cd OCR-CopyPastePad/
 pip install -r requirements.txt
 ```
 (or, manually: `pip install -U pytesseract Pillow python-opencv easyocr`)
+
+You will also need to download the tesseract libraries and install them.
+- On Windows, download i.e. the pre-compiled installer: https://github.com/UB-Mannheim/tesseract/wiki
+- On Linux, i.e. Ubuntu: `sudo apt install tesseract-ocr`
+- On MacOS, using Homebrew: `brew install tesseract`
+
 3. Run the program
 ```
 python OCR-CopyPastePad.py
@@ -47,6 +53,7 @@ python OCR-CopyPastePad_no_OpenCV_ROI.py
 - Note that results may vary between source texts etc. -- in some cases, running the non-OpenCV version might actually yield more accurate results. OCR is a... thing.
 
 # Changelog
+- `v0.146`: check for tesseract libraries on startup
 - `v0.145`: ROI sorting logic redone for EasyOCR processing
 - `v0.144`: Fixes to status update threading
 - `v0.143`: small changes to the overall OCR pipeline; preprocess to check if i.e. color inversion is needed
