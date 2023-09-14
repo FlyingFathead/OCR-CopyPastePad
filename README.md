@@ -40,10 +40,6 @@ You will also need to download the tesseract libraries and install them.
 ```
 python OCR-CopyPastePad.py
 ```
-or, for the non-`OpenCV` "lite" version:
-```
-python OCR-CopyPastePad_no_OpenCV_ROI.py
-```
 
 # Usage
 1. Launch the OCR-CopyPastePad application (`python OCR-CopyPastePad.py`). You can also try out if your OCR results are better with the non-OpenCV version by running `python OCR-CopyPastePad_no_OpenCV_ROI.py`.
